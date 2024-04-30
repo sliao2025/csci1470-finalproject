@@ -238,3 +238,19 @@ for epoch in range(NUM_EPOCHS):
     train_accuracies.append(train_accuracy)
     val_losses.append(avg_val_loss)
     val_accuracies.append(val_accuracy)
+
+# Save scores on train and validation sets
+
+cur_dir = os.getcwd()
+root_dir = os.path.dirname(cur_dir)
+pkl_dir = os.path.join(root_dir, 'pickle_files/fine_tuning_resnet152_pytorch_history.pkl')
+
+history = {
+    train_loss: train_losses,
+    train_accuracy: train_accuracies,
+    val_loss: val_losses,
+    val_accuracy: val_accuracies,
+}
+
+with open(pkl_dir, 'wb') as f:
+    pickle.dump(history, f)
