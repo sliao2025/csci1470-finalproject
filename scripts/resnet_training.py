@@ -95,7 +95,7 @@ model = nn.Sequential(
   nn.Dropout(p=0.3),
   nn.ReLU(),
   nn.Linear(512, NUM_CLASSES),
-  nn.Softmax()
+  nn.Softmax(dim=-1)
 )
 
 # fine tuning, allow resnet pretrained weights to be trainable
@@ -199,6 +199,8 @@ for epoch in range(NUM_EPOCHS):
     # Calculate average training loss and accuracy
     avg_train_loss = train_loss / STEPS_PER_EPOCH
     train_accuracy = 100. * correct_train / total_train
+
+    tqdm._instances.clear()
 
     # Validation
     model.eval()  # Set the model to evaluation mode
