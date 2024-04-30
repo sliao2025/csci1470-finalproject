@@ -127,26 +127,25 @@ def batch_generator(files, BATCH_SIZE):
     L = len(files)
 
     #this line is just to make the generator infinite, keras needs that    
-    while True:
 
-        batch_start = 0
-        batch_end = BATCH_SIZE
+    batch_start = 0
+    batch_end = BATCH_SIZE
 
-        while batch_start < L:
-            
-            limit = min(batch_end, L)
-            file_list = files[batch_start: limit]
-            batch_img_array, batch_label_array, batch_idx_array = load_batch(file_list)
+    while batch_start < L:
+        
+        limit = min(batch_end, L)
+        file_list = files[batch_start: limit]
+        batch_img_array, batch_label_array, batch_idx_array = load_batch(file_list)
 
-            # Convert numpy arrays to PyTorch tensors
-            batch_img_array = torch.tensor(batch_img_array, dtype=torch.float32)
-            batch_label_array = torch.tensor(batch_label_array, dtype=torch.float32)
-            
+        # Convert numpy arrays to PyTorch tensors
+        batch_img_array = torch.tensor(batch_img_array, dtype=torch.float32)
+        batch_label_array = torch.tensor(batch_label_array, dtype=torch.float32)
+        
 
-            yield (batch_img_array, batch_label_array) # a tuple with two numpy arrays with batch_size samples     
+        yield (batch_img_array, batch_label_array) # a tuple with two numpy arrays with batch_size samples     
 
-            batch_start += BATCH_SIZE   
-            batch_end += BATCH_SIZE
+        batch_start += BATCH_SIZE   
+        batch_end += BATCH_SIZE
 
 
 # set training optimizer, loss, and metrics
