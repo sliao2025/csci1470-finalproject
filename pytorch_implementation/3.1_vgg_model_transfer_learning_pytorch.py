@@ -14,22 +14,31 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.utils.class_weight import compute_class_weight
 
-from tqdm import tqdm
-import gc
-
 import os
+from tqdm import tqdm
 
-# Set device
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-# set hyperparams
-IMG_DIR = 'spectrogram_images/'
+# %matplotlib inline
+# check cuda availability
+torch.cuda.is_available()
+mps_device = torch.device("mps")
+
+IMG_DIR = '/users/sliao10/scratch/csci1470-finalproject/spectrogram_images'
 IMG_HEIGHT = 216
 IMG_WIDTH = 216
 NUM_CLASSES = 7
 NUM_EPOCHS = 10
 BATCH_SIZE = 32
 L2_LAMBDA = 0.001
+
+# Randomly select 1 spectrogram from each category for plotting
+sample_files = ['136_Hip_hop_music.jpg', 
+                 '6627_Pop_music.jpg',
+                 '44153_Vocal.jpg',
+                 '3400_Rhythm_blues.jpg',
+                 '12908_Reggae.jpg',
+                 '22013_Rock_music.jpg',
+                 '21163_Techno.jpg']
 
 label_dict = {'Hip':0,
               'Pop':1,
@@ -39,14 +48,9 @@ label_dict = {'Hip':0,
               'Rock':5,
               'Techno':6,
              }
-
 one_hot = OneHotEncoder(categories=[range(NUM_CLASSES)])
 
-# get working directory
-cur_dir = os.getcwd()
-root_dir = os.path.dirname(cur_dir)
-specto_dir = os.path.join(root_dir, IMG_DIR)
-all_files = os.listdir(specto_dir)
+all_files = os.listdir(IMG_DIR)
 
 # Get class weights
 label_array = []
@@ -71,9 +75,16 @@ val_files, test_files, val_labels, test_labels = train_test_split(test_files, te
                                                                   test_size = 0.5
                                                                  )
 
-conv_base = models.resnet152(weights='DEFAULT')
-in_features = conv_base.fc.in_features
-conv_base.fc = torch.nn.Identity()
+conv_base = models.vgg16(weights = "IMAGENET1K_V1", progress=True)
+
+in_features = conv_base.classifier[0].in_features
+
+conv_base.classifier = torch.nn.Identity()
+
+conv_base.eval()
+
+# summary(conv_base)
+print(conv_base.features)
 
 class L2RegularizedLinear(nn.Module):
   def __init__(self, in_features, out_features, l2_lambda):
@@ -95,12 +106,16 @@ model = nn.Sequential(
   nn.Dropout(p=0.3),
   nn.ReLU(),
   nn.Linear(512, NUM_CLASSES),
-  nn.Softmax(dim=-1)
+  nn.Softmax()
 )
 
-# fine tuning, allow resnet pretrained weights to be trainable
+#Set the convolution base to not be trainable
 for param in conv_base.parameters():
-    param.requires_grad = True
+    param.requires_grad = False
+# summary(model)
+
+# load images, prepare labels, and normalize 
+specto_dir = '/users/sliao10/scratch/csci1470-finalproject/spectrogram_images/'
 
 class CustomDataset(Dataset):
     def __init__(self, files, specto_dir, label_dict, IMG_WIDTH, IMG_HEIGHT):
@@ -137,30 +152,16 @@ train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-
-# set training optimizer, loss, and metrics
+            # set training optimizer, loss, and metrics
 optimizer = optim.Adam(model.parameters(), lr=1e-5)
 loss_function = torch.nn.functional.cross_entropy
 
 def categorical_accuracy(output, target):
     predicted = torch.argmax(output, dim=-1)
-    labels = torch.argmax(target, dim=-1)
-    correct = (predicted == labels).float()
-    return correct.sum() 
-
-
-# Calculate number of steps per epoch
-STEPS_PER_EPOCH = len(train_files) // BATCH_SIZE
-VAL_STEPS = len(val_files) // BATCH_SIZE
-
-# Initialize lists to store training and validation losses and accuracies
-train_losses = []
-train_accuracies = []
-val_losses = []
-val_accuracies = []
-
-model.to(device)
-
+    targets = torch.argmax(target, dim=-1)
+    # print(predicted.shape, target.shape)
+    correct = (predicted == targets).float()
+    return correct.sum()
 
 # Calculate number of steps per epoch
 STEPS_PER_EPOCH = len(train_files) // BATCH_SIZE
@@ -172,8 +173,8 @@ train_accuracies = []
 val_losses = []
 val_accuracies = []
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
-
 # Training loop
 for epoch in range(NUM_EPOCHS):
     # Training
@@ -183,16 +184,15 @@ for epoch in range(NUM_EPOCHS):
     total_train = 0
     for batch_idx, (inputs, targets) in tqdm(enumerate(train_loader), total=STEPS_PER_EPOCH):
         # Permute the inputs to [N, C, H, W] from [N, H, W, C]
+        inputs, targets = inputs.to(device, dtype=torch.float32), targets.to(device, dtype=torch.float32)
         inputs = inputs.permute(0, 3, 1, 2)
-        inputs = inputs.to(device, dtype=torch.float32)
-        targets = targets.to(device, dtype=torch.float32)
         optimizer.zero_grad()  # Zero the gradients
         outputs = model(inputs)  # Forward pass
         loss = loss_function(outputs, targets)  # Calculate the loss
         loss.backward()  # Backward pass
         optimizer.step()  # Update weights
         train_loss += loss.item()
-        # aggregate total number correct
+        # aggregate total number 
         correct_train += categorical_accuracy(outputs, targets)
         total_train += targets.size(0)
         # _, predicted = outputs.max(1)
@@ -209,10 +209,10 @@ for epoch in range(NUM_EPOCHS):
     total_val = 0
     with torch.no_grad():
         for batch_idx, (inputs, targets) in tqdm(enumerate(val_loader), total=VAL_STEPS):
-            # Permute the inputs to [N, C, H, W] from [N, H, W, C]
+            inputs, targets = inputs.to(device, dtype=torch.float32), targets.to(device,dtype=torch.float32)
+            
             inputs = inputs.permute(0, 3, 1, 2)
-            inputs = inputs.to(device, dtype=torch.float32)
-            targets = targets.to(device, dtype=torch.float32)
+            
             outputs = model(inputs)  # Forward pass
             loss = loss_function(outputs, targets)  # Calculate the loss
             val_loss += loss.item()
@@ -240,19 +240,3 @@ for epoch in range(NUM_EPOCHS):
     train_accuracies.append(train_accuracy)
     val_losses.append(avg_val_loss)
     val_accuracies.append(val_accuracy)
-
-# Save scores on train and validation sets
-
-cur_dir = os.getcwd()
-root_dir = os.path.dirname(cur_dir)
-pkl_dir = os.path.join(root_dir, 'pickle_files/fine_tuning_resnet152_pytorch_history.pkl')
-
-history = {
-    train_loss: train_losses,
-    train_accuracy: train_accuracies,
-    val_loss: val_losses,
-    val_accuracy: val_accuracies,
-}
-
-with open(pkl_dir, 'wb') as f:
-    pickle.dump(history, f)
