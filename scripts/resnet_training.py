@@ -209,12 +209,12 @@ def main():
     # Initialize datasets
     train_dataset = CustomDataset(train_files, SPECTO_DIR, label_dict, IMG_WIDTH, IMG_HEIGHT)
     val_dataset = CustomDataset(val_files, SPECTO_DIR, label_dict, IMG_WIDTH, IMG_HEIGHT)
-    test_dataset = CustomDataset(test_files, SPECTO_DIR, label_dict, IMG_WIDTH, IMG_HEIGHT)
+    # test_dataset = CustomDataset(test_files, SPECTO_DIR, label_dict, IMG_WIDTH, IMG_HEIGHT)
 
     # Initialize DataLoader instances
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    # test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     # init model
     model = build_model()
@@ -235,6 +235,11 @@ def main():
     }
     with open(pkl_dir, 'wb') as f:
         pickle.dump(history, f)
+
+    # save test files
+    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_resnet152_pytorch_test_files.pkl')
+    with open(pkl_dir, 'wb') as f:
+        pickle.dump(test_files, f)
 
 if __name__ == '__main__':
     main()
