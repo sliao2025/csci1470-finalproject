@@ -28,8 +28,8 @@ IMG_HEIGHT = 216
 IMG_WIDTH = 216
 NUM_CLASSES = 7
 NUM_EPOCHS = 10
-BATCH_SIZE = 32
-L2_LAMBDA = 0.001
+BATCH_SIZE = 24
+L2_LAMBDA = 0.0001
 
 # Randomly select 1 spectrogram from each category for plotting
 sample_files = ['136_Hip_hop_music.jpg', 
@@ -106,7 +106,7 @@ model = nn.Sequential(
   nn.Dropout(p=0.3),
   nn.ReLU(),
   nn.Linear(512, NUM_CLASSES),
-  nn.Softmax()
+  nn.Softmax(dim=-1)
 )
 
 #Set the convolution base to not be trainable
@@ -153,7 +153,7 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
             # set training optimizer, loss, and metrics
-optimizer = optim.Adam(model.parameters(), lr=1e-5)
+optimizer = optim.Adam(model.parameters(), lr=5e-5)
 loss_function = torch.nn.functional.cross_entropy
 
 def categorical_accuracy(output, target):
