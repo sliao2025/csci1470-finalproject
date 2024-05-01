@@ -20,7 +20,7 @@ import gc
 import os
 
 # Set device
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # set hyperparams
 IMG_DIR = 'spectrogram_images/'
