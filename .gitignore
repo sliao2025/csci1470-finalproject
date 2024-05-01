@@ -2,6 +2,12 @@
 
 /spectrogram_images
 
+<<<<<<< HEAD
 /saved_models
 
 /audio_files_freemusicarchive
+=======
+/gtzan_audio
+
+/saved_models
+>>>>>>> 87c065c3e28ae70a843dc65948af62cdd62989bc
