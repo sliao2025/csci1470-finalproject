@@ -77,6 +77,7 @@ def load_data():
     cl_weight = compute_class_weight(class_weight = 'balanced', 
                                     classes = np.unique(label_array), 
                                     y = label_array)
+    cl_weight = torch.tensor(cl_weight, dtype=torch.float32)
 
     # Train-val-test split of files
     train_files, test_files, train_labels, test_labels = train_test_split(all_files, 
@@ -91,7 +92,7 @@ def load_data():
                                                                     test_size = 0.5
                                                                     )
     
-    return train_files, val_files, test_files, train_labels, val_labels, test_labels
+    return train_files, val_files, test_files, train_labels, val_labels, test_labels, cl_weight
 
 # creates the model 
 def build_model():
@@ -121,7 +122,7 @@ def categorical_accuracy(output, target):
     correct = (predicted == labels).float()
     return correct.sum() 
 
-def train_model(model, train_loader, val_loader, STEPS_PER_EPOCH, VAL_STEPS):
+def train_model(model, train_loader, val_loader, cl_weight, STEPS_PER_EPOCH, VAL_STEPS):
     # Initialize lists to store training and validation losses and accuracies
     train_losses = []
     train_accuracies = []
@@ -131,7 +132,7 @@ def train_model(model, train_loader, val_loader, STEPS_PER_EPOCH, VAL_STEPS):
     model.to(device)
     # set training optimizer, loss, and metrics
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=L2_LAMBDA)
-    loss_function = torch.nn.functional.cross_entropy
+    loss_function = nn.CrossEntropyLoss(weight=cl_weight)
 
     # Training loop
     for epoch in range(NUM_EPOCHS):
@@ -204,7 +205,7 @@ def train_model(model, train_loader, val_loader, STEPS_PER_EPOCH, VAL_STEPS):
 
 
 def main():
-    train_files, val_files, test_files, train_labels, val_labels, test_labels = load_data()
+    train_files, val_files, test_files, train_labels, val_labels, test_labels, cl_weight = load_data()
     
     # Initialize datasets
     train_dataset = CustomDataset(train_files, SPECTO_DIR, label_dict, IMG_WIDTH, IMG_HEIGHT)
@@ -223,7 +224,7 @@ def main():
     STEPS_PER_EPOCH = len(train_files) // BATCH_SIZE
     VAL_STEPS = len(val_files) // BATCH_SIZE
 
-    train_losses, train_accuracies, val_losses, val_accuracies = train_model(model, train_loader, val_loader, STEPS_PER_EPOCH, VAL_STEPS)
+    train_losses, train_accuracies, val_losses, val_accuracies = train_model(model, train_loader, val_loader, cl_weight, STEPS_PER_EPOCH, VAL_STEPS)
 
     # save training history
     pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_vit_pytorch_history.pkl')
