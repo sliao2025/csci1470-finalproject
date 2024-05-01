@@ -102,51 +102,40 @@ model = nn.Sequential(
 for param in conv_base.parameters():
     param.requires_grad = True
 
-# load images, prepare labels, and normalize 
-def load_batch(file_list):
-    img_array = []
-    idx_array = []
-    label_array = []
+class CustomDataset(Dataset):
+    def __init__(self, files, specto_dir, label_dict, IMG_WIDTH, IMG_HEIGHT):
+        self.files = files
+        self.specto_dir = specto_dir
+        self.label_dict = label_dict
+        self.one_hot = one_hot
+        self.IMG_WIDTH = IMG_WIDTH
+        self.IMG_HEIGHT = IMG_HEIGHT
 
-    for file_ in file_list:
-        im = Image.open(specto_dir + file_)
-        im = im.resize((IMG_WIDTH, IMG_HEIGHT), Image.Resampling.LANCZOS)
-        img_array.append(np.array(im))
+    def __len__(self):
+        return len(self.files)
 
-        vals = file_[:-4].split('_')
-        idx_array.append(vals[0])
-        label_array.append([label_dict[vals[1]]])
+    def __getitem__(self, idx):
+        file_ = self.files[idx]
+        im = Image.open(self.specto_dir + file_)
+        im = im.resize((self.IMG_WIDTH, self.IMG_HEIGHT), Image.Resampling.LANCZOS)
+        spectogram = np.array(im) / 255.0
+        
+        label = file_[:-4].split('_')
+        label_array = np.array([self.label_dict[label[1]]])
+        label_array = label_array.reshape(1, -1)
+        label_array = one_hot.fit_transform(label_array).toarray()
 
-    label_array = one_hot.fit_transform(label_array).toarray()
-    img_array = np.array(img_array)/255.0 # Normalize RGB
+        return spectogram, np.array(label_array[0])
     
-    return img_array, np.array(label_array), np.array(idx_array)
+# Initialize datasets
+train_dataset = CustomDataset(train_files, specto_dir, label_dict, IMG_WIDTH, IMG_HEIGHT)
+val_dataset = CustomDataset(val_files, specto_dir, label_dict, IMG_WIDTH, IMG_HEIGHT)
+test_dataset = CustomDataset(test_files, specto_dir, label_dict, IMG_WIDTH, IMG_HEIGHT)
 
-
-def batch_generator(files, BATCH_SIZE):
-    L = len(files)
-
-    #this line is just to make the generator infinite, keras needs that    
-    while True:
-
-        batch_start = 0
-        batch_end = BATCH_SIZE
-
-        while batch_start < L:
-            
-            limit = min(batch_end, L)
-            file_list = files[batch_start: limit]
-            batch_img_array, batch_label_array, batch_idx_array = load_batch(file_list)
-
-            # Convert numpy arrays to PyTorch tensors
-            batch_img_array = torch.tensor(batch_img_array, dtype=torch.float32)
-            batch_label_array = torch.tensor(batch_label_array, dtype=torch.float32)
-            
-
-            yield (batch_img_array, batch_label_array) # a tuple with two numpy arrays with batch_size samples     
-
-            batch_start += BATCH_SIZE   
-            batch_end += BATCH_SIZE
+# Initialize DataLoader instances
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
 
 # set training optimizer, loss, and metrics
@@ -172,6 +161,18 @@ val_accuracies = []
 model.to(device)
 
 
+# Calculate number of steps per epoch
+STEPS_PER_EPOCH = len(train_files) // BATCH_SIZE
+VAL_STEPS = len(val_files) // BATCH_SIZE
+
+# Initialize lists to store training and validation losses and accuracies
+train_losses = []
+train_accuracies = []
+val_losses = []
+val_accuracies = []
+
+model.to(device)
+
 # Training loop
 for epoch in range(NUM_EPOCHS):
     # Training
@@ -179,11 +180,11 @@ for epoch in range(NUM_EPOCHS):
     train_loss = 0.0
     correct_train = 0
     total_train = 0
-    for batch_idx, (inputs, targets) in tqdm(enumerate(batch_generator(train_files, BATCH_SIZE)), total=STEPS_PER_EPOCH):
+    for batch_idx, (inputs, targets) in tqdm(enumerate(train_loader), total=STEPS_PER_EPOCH):
         # Permute the inputs to [N, C, H, W] from [N, H, W, C]
         inputs = inputs.permute(0, 3, 1, 2)
-        inputs = inputs.to(device)
-        targets = targets.to(device)
+        inputs = inputs.to(device, dtype=torch.float32)
+        targets = targets.to(device, dtype=torch.float32)
         optimizer.zero_grad()  # Zero the gradients
         outputs = model(inputs)  # Forward pass
         loss = loss_function(outputs, targets)  # Calculate the loss
@@ -200,19 +201,17 @@ for epoch in range(NUM_EPOCHS):
     avg_train_loss = train_loss / STEPS_PER_EPOCH
     train_accuracy = 100. * correct_train / total_train
 
-    tqdm._instances.clear()
-
     # Validation
     model.eval()  # Set the model to evaluation mode
     val_loss = 0.0
     correct_val = 0
     total_val = 0
     with torch.no_grad():
-        for batch_idx, (inputs, targets) in tqdm(enumerate(batch_generator(val_files, BATCH_SIZE)), total=VAL_STEPS):
+        for batch_idx, (inputs, targets) in tqdm(enumerate(val_loader), total=VAL_STEPS):
             # Permute the inputs to [N, C, H, W] from [N, H, W, C]
             inputs = inputs.permute(0, 3, 1, 2)
-            inputs = inputs.to(device)
-            targets = targets.to(device)
+            inputs = inputs.to(device, dtype=torch.float32)
+            targets = targets.to(device, dtype=torch.float32)
             outputs = model(inputs)  # Forward pass
             loss = loss_function(outputs, targets)  # Calculate the loss
             val_loss += loss.item()
