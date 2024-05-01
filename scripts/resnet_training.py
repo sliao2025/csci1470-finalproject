@@ -143,8 +143,9 @@ optimizer = optim.Adam(model.parameters(), lr=1e-5)
 loss_function = torch.nn.functional.cross_entropy
 
 def categorical_accuracy(output, target):
-    predicted = torch.argmax(output, dim=0)
-    correct = (predicted == target).float()
+    predicted = torch.argmax(output, dim=-1)
+    labels = torch.argmax(target, dim=-1)
+    correct = (predicted == labels).float()
     return correct.sum() 
 
 
