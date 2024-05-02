@@ -28,8 +28,8 @@ IMG_HEIGHT = 216
 IMG_WIDTH = 216
 NUM_CLASSES = 7
 NUM_EPOCHS = 10
-BATCH_SIZE = 24
-L2_LAMBDA = 0.0001
+BATCH_SIZE = 32
+L2_LAMBDA = 0.001
 
 # Randomly select 1 spectrogram from each category for plotting
 sample_files = ['136_Hip_hop_music.jpg', 
@@ -240,3 +240,20 @@ for epoch in range(NUM_EPOCHS):
     train_accuracies.append(train_accuracy)
     val_losses.append(avg_val_loss)
     val_accuracies.append(val_accuracy)
+
+    ROOT_DIR = '/users/sliao10/scratch/csci1470-finalproject'
+    # save training history
+    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_vgg16_pytorch_history.pkl')
+    history = {
+        "train_loss": train_losses,
+        "train_accuracy": train_accuracies,
+        "val_loss": val_losses,
+        "val_accuracy": val_accuracies,
+    }
+    with open(pkl_dir, 'wb') as f:
+        pickle.dump(history, f)
+
+    # save test files
+    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_vgg16_pytorch_test_files.pkl')
+    with open(pkl_dir, 'wb') as f:
+        pickle.dump(test_files, f)
