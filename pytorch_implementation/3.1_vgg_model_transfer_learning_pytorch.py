@@ -106,7 +106,7 @@ model = nn.Sequential(
   nn.Dropout(p=0.3),
   nn.ReLU(),
   nn.Linear(512, NUM_CLASSES),
-  nn.Softmax()
+  nn.Softmax(dim=-1)
 )
 
 #Set the convolution base to not be trainable
@@ -153,7 +153,7 @@ val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
             # set training optimizer, loss, and metrics
-optimizer = optim.Adam(model.parameters(), lr=1e-5)
+optimizer = optim.Adam(model.parameters(), lr=5e-5)
 loss_function = torch.nn.functional.cross_entropy
 
 def categorical_accuracy(output, target):
@@ -240,3 +240,20 @@ for epoch in range(NUM_EPOCHS):
     train_accuracies.append(train_accuracy)
     val_losses.append(avg_val_loss)
     val_accuracies.append(val_accuracy)
+
+    ROOT_DIR = '/users/sliao10/scratch/csci1470-finalproject'
+    # save training history
+    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_vgg16_pytorch_history.pkl')
+    history = {
+        "train_loss": train_losses,
+        "train_accuracy": train_accuracies,
+        "val_loss": val_losses,
+        "val_accuracy": val_accuracies,
+    }
+    with open(pkl_dir, 'wb') as f:
+        pickle.dump(history, f)
+
+    # save test files
+    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_vgg16_pytorch_test_files.pkl')
+    with open(pkl_dir, 'wb') as f:
+        pickle.dump(test_files, f)

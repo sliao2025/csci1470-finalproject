@@ -24,11 +24,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # set hyperparams
 IMG_DIR = 'spectrogram_images/'
-IMG_HEIGHT = 216
-IMG_WIDTH = 216
+IMG_HEIGHT = 224
+IMG_WIDTH = 224
 NUM_CLASSES = 7
 NUM_EPOCHS = 10
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 L2_LAMBDA = 0.001
 LR = 1e-5
 
@@ -96,9 +96,9 @@ def load_data():
 
 # creates the model 
 def build_model():
-    conv_base = models.resnet152(weights='DEFAULT')
-    in_features = conv_base.fc.in_features
-    conv_base.fc = torch.nn.Identity()
+    conv_base = models.vit_l_16(weights='DEFAULT')
+    in_features = conv_base.heads[0].in_features
+    conv_base.heads = torch.nn.Identity()
 
     model = nn.Sequential(
         conv_base,
@@ -110,7 +110,7 @@ def build_model():
         nn.Softmax(dim=-1)
         )
 
-    # fine tuning, allow resnet pretrained weights to be trainable
+    # fine tuning, allow vit pretrained weights to be trainable
     for param in conv_base.parameters():
         param.requires_grad = True
     
@@ -190,7 +190,7 @@ def train_model(model, train_loader, val_loader, cl_weight, STEPS_PER_EPOCH, VAL
             f'Validation Loss: {avg_val_loss:.4f}, Validation Accuracy: {val_accuracy:.2f}%')
 
         # Save the model checkpoint
-        ckpt_dir = os.path.join(ROOT_DIR, f'saved_models/fine_tuning_epoch_{epoch + 1}_{val_accuracy:.4f}.pt')
+        ckpt_dir = os.path.join(ROOT_DIR, f'saved_models/vit_epoch_{epoch + 1}_{val_accuracy:.4f}.pt')
         torch.save(model.state_dict(), ckpt_dir)
 
         # Append metrics to lists for plotting later if needed
@@ -227,7 +227,7 @@ def main():
     train_losses, train_accuracies, val_losses, val_accuracies = train_model(model, train_loader, val_loader, cl_weight, STEPS_PER_EPOCH, VAL_STEPS)
 
     # save training history
-    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_resnet152_pytorch_history.pkl')
+    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_vit_pytorch_history.pkl')
     history = {
         "train_loss": train_losses,
         "train_accuracy": train_accuracies,
@@ -238,7 +238,7 @@ def main():
         pickle.dump(history, f)
 
     # save test files
-    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_resnet152_pytorch_test_files.pkl')
+    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_vit_pytorch_test_files.pkl')
     with open(pkl_dir, 'wb') as f:
         pickle.dump(test_files, f)
 
