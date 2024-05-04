@@ -23,7 +23,7 @@ import os
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # set hyperparams
-IMG_DIR = 'spectrogram_images/'
+IMG_DIR = 'spectrogram_images/fma_spectrogram_images/'
 IMG_HEIGHT = 216
 IMG_WIDTH = 216
 NUM_CLASSES = 7
@@ -32,7 +32,24 @@ BATCH_SIZE = 32
 L2_LAMBDA = 0.001
 LR = 1e-5
 
-label_dict = {'Hip':0, 'Pop':1, 'Vocal':2, 'Rhythm':3, 'Reggae':4, 'Rock':5, 'Techno':6,}
+label_dict = {
+    'Hip-Hop': 0,
+    'Rock': 1,
+    'International': 2,
+    'Electronic': 3,
+    'Pop': 4,
+    'Jazz': 5,
+    'Experimental': 6,
+    'Folk': 7,
+    'Instrumental': 8,
+    'Spoken': 9,
+    'Classical': 10,
+    'Soul-RnB': 11,
+    'Old-Time ': 12,
+    'Country': 13,
+    'Blues': 14,
+    'Easy Listening': 15
+}
 one_hot = OneHotEncoder(categories=[range(NUM_CLASSES)])
 
 CUR_DIR = os.getcwd()
@@ -190,7 +207,7 @@ def train_model(model, train_loader, val_loader, cl_weight, STEPS_PER_EPOCH, VAL
             f'Validation Loss: {avg_val_loss:.4f}, Validation Accuracy: {val_accuracy:.2f}%')
 
         # Save the model checkpoint
-        ckpt_dir = os.path.join(ROOT_DIR, f'saved_models/vgg_fine_tuning_epoch_{epoch + 1}_{val_accuracy:.4f}.pt')
+        ckpt_dir = os.path.join(ROOT_DIR, f'saved_models/fma_vgg_fine_tuning_epoch_{epoch + 1}_{val_accuracy:.4f}.pt')
         torch.save(model.state_dict(), ckpt_dir)
 
         # Append metrics to lists for plotting later if needed
@@ -228,7 +245,7 @@ def main():
     train_losses, train_accuracies, val_losses, val_accuracies = train_model(model, train_loader, val_loader, cl_weight, STEPS_PER_EPOCH, VAL_STEPS)
 
     # save training history
-    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_vgg_pytorch_history.pkl')
+    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fma_fine_tuning_vgg_pytorch_history.pkl')
     history = {
         "train_loss": train_losses,
         "train_accuracy": train_accuracies,
@@ -239,7 +256,7 @@ def main():
         pickle.dump(history, f)
 
     # save test files
-    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fine_tuning_vgg_pytorch_test_files.pkl')
+    pkl_dir = os.path.join(ROOT_DIR, 'pickle_files/fma_fine_tuning_vgg_pytorch_test_files.pkl')
     with open(pkl_dir, 'wb') as f:
         pickle.dump(test_files, f)
 
