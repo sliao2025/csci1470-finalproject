@@ -9,7 +9,7 @@
 #--- Start of Slurm commands ---
 #SBATCH --partition=gpus
 #SBATCH --gres=gpu:1
-#SBATCH --time=15:00:00
+#SBATCH --time=24:00:00
 #SBATCH --mem=64G
 #SBATCH -J MyPythonJob
 #SBATCH -o MyPythonJob-%j.out
