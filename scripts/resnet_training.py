@@ -241,6 +241,7 @@ def main():
     STEPS_PER_EPOCH = len(train_files) // BATCH_SIZE
     VAL_STEPS = len(val_files) // BATCH_SIZE
 
+    cl_weight = cl_weight.to(device)
     train_losses, train_accuracies, val_losses, val_accuracies = train_model(model, train_loader, val_loader, cl_weight, STEPS_PER_EPOCH, VAL_STEPS)
 
     # save training history
