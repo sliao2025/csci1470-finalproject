@@ -26,7 +26,7 @@ mps_device = torch.device("mps")
 IMG_DIR = '/users/sliao10/scratch/csci1470-finalproject/fma_spectrogram_images'
 IMG_HEIGHT = 216
 IMG_WIDTH = 216
-NUM_CLASSES = 7
+NUM_CLASSES = 16
 NUM_EPOCHS = 10
 BATCH_SIZE = 32
 L2_LAMBDA = 0.001
@@ -53,7 +53,7 @@ label_dict_fma = {
     'Spoken': 9,
     'Classical': 10,
     'Soul-RnB': 11,
-    'Old-Time': 12,
+    'Old-Time ': 12,
     'Country': 13,
     'Blues': 14,
     'Easy Listening': 15
