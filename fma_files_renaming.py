@@ -6,6 +6,7 @@ fma_audio_path = "./fma_medium"
 tracks_csv_path = "./tracks_metadata.csv"
 df = pd.read_csv(tracks_csv_path)
 df.set_index('track_id', inplace=True)
+df.index = df.index.astype(str)
 
 def get_genre(track_id):
     try:
@@ -30,13 +31,18 @@ for folder in os.listdir(fma_audio_path):
     for filename in os.listdir(folder_path):
         # Check if the file is actually a file (not a directory)
         if os.path.isfile(os.path.join(folder_path, filename)):
-            genre = get_genre(filename[:filename.rfind(".")].lstrip('0') or '0').replace("/", "_")
+            genre = get_genre(filename[:filename.rfind(".")].lstrip('0') or '0')
+            if genre == "Track ID not found":
+                print(filename)
+                print(filename[:filename.rfind(".")].lstrip('0') or '0')
             # if the genre exists for a given track
             if not pd.isna(genre):
                 # Construct the new filename
+                genre = genre.replace("/", "_")
                 new_filename = f"{i}_{genre}.mp3"
-                # Rename the file
-                os.rename(os.path.join(folder_path, filename), os.path.join(folder_path, new_filename))
+                print(new_filename)
                 # Move file outside of folder 
-                shutil.copy(os.path.join(folder_path, new_filename), new_folder_path)
+                shutil.copy(os.path.join(folder_path, filename), new_folder_path)
+                # Rename the file
+                os.rename(os.path.join(new_folder_path, filename), os.path.join(new_folder_path, new_filename))
                 i += 1
