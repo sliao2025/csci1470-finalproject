@@ -153,9 +153,9 @@ class CustomDataset(Dataset):
         return spectogram, np.array(label_array[0])
     
 # Initialize datasets
-train_dataset = CustomDataset(train_files, specto_dir, label_dict, IMG_WIDTH, IMG_HEIGHT)
-val_dataset = CustomDataset(val_files, specto_dir, label_dict, IMG_WIDTH, IMG_HEIGHT)
-test_dataset = CustomDataset(test_files, specto_dir, label_dict, IMG_WIDTH, IMG_HEIGHT)
+train_dataset = CustomDataset(train_files, specto_dir, label_dict_fma, IMG_WIDTH, IMG_HEIGHT)
+val_dataset = CustomDataset(val_files, specto_dir, label_dict_fma, IMG_WIDTH, IMG_HEIGHT)
+test_dataset = CustomDataset(test_files, specto_dir, label_dict_fma, IMG_WIDTH, IMG_HEIGHT)
 
 # Initialize DataLoader instances
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
