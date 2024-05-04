@@ -23,22 +23,13 @@ from tqdm import tqdm
 torch.cuda.is_available()
 mps_device = torch.device("mps")
 
-IMG_DIR = '/users/sliao10/scratch/csci1470-finalproject/spectrogram_images'
+IMG_DIR = '/users/sliao10/scratch/csci1470-finalproject/fma_spectrogram_images'
 IMG_HEIGHT = 216
 IMG_WIDTH = 216
 NUM_CLASSES = 7
 NUM_EPOCHS = 10
 BATCH_SIZE = 32
 L2_LAMBDA = 0.001
-
-# Randomly select 1 spectrogram from each category for plotting
-sample_files = ['136_Hip_hop_music.jpg', 
-                 '6627_Pop_music.jpg',
-                 '44153_Vocal.jpg',
-                 '3400_Rhythm_blues.jpg',
-                 '12908_Reggae.jpg',
-                 '22013_Rock_music.jpg',
-                 '21163_Techno.jpg']
 
 label_dict = {'Hip':0,
               'Pop':1,
@@ -48,6 +39,25 @@ label_dict = {'Hip':0,
               'Rock':5,
               'Techno':6,
              }
+
+label_dict_fma = {
+    'Hip-Hop': 0,
+    'Rock': 1,
+    'International': 2,
+    'Electronic': 3,
+    'Pop': 4,
+    'Jazz': 5,
+    'Experimental': 6,
+    'Folk': 7,
+    'Instrumental': 8,
+    'Spoken': 9,
+    'Classical': 10,
+    'Soul-RnB': 11,
+    'Old-Time': 12,
+    'Country': 13,
+    'Blues': 14,
+    'Easy Listening': 15
+}
 one_hot = OneHotEncoder(categories=[range(NUM_CLASSES)])
 
 all_files = os.listdir(IMG_DIR)
